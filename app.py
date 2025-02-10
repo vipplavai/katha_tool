@@ -42,7 +42,7 @@ if 'current_story' in st.session_state:
     
     selected_sentences = set()
     cleaned_sentences = []
-    for idx, paragraph in enumerate(story["content"]):
+    for idx, paragraph in enumerate(story["Content"]):
         checked = paragraph in st.session_state['temp_noise']
         if st.checkbox(paragraph, key=f'para_{idx}_{hash(story["url"])}', value=checked):
             selected_sentences.add(paragraph)
@@ -52,7 +52,7 @@ if 'current_story' in st.session_state:
     col1, col2 = st.columns(2)
     with col1:
         if st.button("✅ Save Cleaned Story", use_container_width=True):
-            st.session_state['current_story']['content'] = cleaned_sentences  # Remove noise from UI
+            st.session_state['current_story']['Content'] = cleaned_sentences  # Remove noise from UI
             json_data = json.dumps(st.session_state['current_story'], ensure_ascii=False, indent=4)
             safe_title = "_".join(story["title"].split())[:50]  # Limit filename length
             filename = f"{safe_title}.json"

@@ -18,7 +18,7 @@ def scrape_website(url):
         
         # Extract all paragraph content
         paragraphs = soup.find_all("p")
-        sentences = [p.get_text(strip=True) for p in paragraphs]
+        sentences = [p.get_text(strip=True) for p in paragraphs if p.get_text(strip=True)]
         
         return title, sentences
     except Exception as e:
@@ -31,23 +31,36 @@ url = st.text_input("Enter webpage URL to scrape:")
 if st.button("Scrape Story", use_container_width=True) and url:
     title, sentences = scrape_website(url)
     
-    if title != "Error":
+    if title != "Error" and sentences:
         st.session_state['current_story'] = {"title": title, "url": url, "Content": sentences, "category": "stories"}
         st.session_state['temp_noise'] = set()
+        st.session_state['edit_mode'] = "checkbox"  # Default selection mode
         st.rerun()
+    else:
+        st.error("Failed to extract content. Please check the URL and try again.")
 
 if 'current_story' in st.session_state:
     story = st.session_state['current_story']
     st.subheader(story["title"])
     
-    selected_sentences = set()
-    cleaned_sentences = []
-    for idx, paragraph in enumerate(story["Content"]):
-        checked = paragraph in st.session_state['temp_noise']
-        if st.checkbox(paragraph, key=f'para_{idx}_{hash(story["url"])}', value=checked):
-            selected_sentences.add(paragraph)
-        else:
-            cleaned_sentences.append(paragraph)
+    # Select mode: Checkbox or Text Editor
+    mode = st.radio("Select Editing Mode:", ("Checkbox", "Text Editor"))
+    st.session_state['edit_mode'] = mode.lower()
+    
+    if st.session_state['edit_mode'] == "checkbox":
+        selected_sentences = set()
+        cleaned_sentences = []
+        for idx, paragraph in enumerate(story["Content"]):
+            checked = paragraph in st.session_state['temp_noise']
+            if st.checkbox(paragraph, key=f'para_{idx}_{hash(story["url"])}', value=checked):
+                selected_sentences.add(paragraph)
+            else:
+                cleaned_sentences.append(paragraph)
+    else:
+        # Text editor mode
+        full_text = "\n".join(story["Content"])
+        updated_text = st.text_area("Edit the Story:", full_text, height=300)
+        cleaned_sentences = updated_text.split("\n")
     
     col1, col2 = st.columns(2)
     with col1:
@@ -61,4 +74,5 @@ if 'current_story' in st.session_state:
         if st.button("➕ Start Fresh", use_container_width=True):
             del st.session_state['current_story']
             del st.session_state['temp_noise']
+            del st.session_state['edit_mode']
             st.rerun()
